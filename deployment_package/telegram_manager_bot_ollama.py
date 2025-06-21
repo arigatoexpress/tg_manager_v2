@@ -1,8 +1,8 @@
-# telegram_manager_bot_unified.py
+# telegram_manager_bot_ollama.py
 """
-Telegram Manager Bot with Unified AI Backend
+Telegram Manager Bot with Ollama Integration
 --------------------------------------------
-This bot can use either local Ollama models or Atoma DePIN network for AI processing.
+This bot manages Telegram chats with AI features using local Ollama models.
 
 Commands:
   /start - show menu
@@ -14,7 +14,6 @@ Commands:
   /meeting [topic] - create meeting link
   /readall - dump messages
   /leads - sync chat summaries to Google Sheets
-  /ai_status - check AI backend status
 """
 
 import os
@@ -35,12 +34,9 @@ from telegram.ext import (
     ContextTypes, MessageHandler, filters
 )
 from dotenv import load_dotenv
-import sys
-import atexit
 
-# Import our AI clients
+# Import our Ollama client
 from ollama_client import initialize_ollama_client, get_ollama_client
-from atoma_client import initialize_atoma_client, get_atoma_client
 
 # === LOAD ENV VARS ===
 load_dotenv()
@@ -57,9 +53,6 @@ CONTEXT_FILE = os.getenv("CONTEXT_FILE", "context.md")
 GOOGLE_SERVICE_ACCOUNT_FILE = os.getenv("GOOGLE_SERVICE_ACCOUNT_FILE")
 GOOGLE_SPREADSHEET_ID = os.getenv("GOOGLE_SPREADSHEET_ID")
 
-# AI Backend Configuration
-AI_BACKEND = os.getenv("AI_BACKEND", "ollama").lower()  # "ollama" or "atoma"
-
 DATA_FILE = "data_store.json"
 KEYWORDS = [
     "urgent", "invoice", "@yourname", "asap", "important", "reminder",
@@ -67,69 +60,13 @@ KEYWORDS = [
     "feedback", "review", "blocker", "question", "help", "fix", "resolve"
 ]
 
-# Initialize AI backend
-ai_client = None
-ai_backend_name = "Unknown"
-
-PID_FILE = 'telegram_manager_bot_unified.pid'
-
-def check_single_instance():
-    """Ensure only one instance of the bot is running using a PID file lock."""
-    if os.path.exists(PID_FILE):
-        try:
-            with open(PID_FILE, 'r') as f:
-                old_pid = int(f.read().strip())
-            # Check if process is running
-            import psutil
-            if psutil.pid_exists(old_pid):
-                print(f"❌ Another instance of the bot is already running (PID {old_pid}). Exiting.")
-                sys.exit(1)
-        except Exception:
-            pass
-    # Write current PID
-    with open(PID_FILE, 'w') as f:
-        f.write(str(os.getpid()))
-    # Remove PID file on exit
-    def remove_pid():
-        try:
-            os.remove(PID_FILE)
-        except Exception:
-            pass
-    atexit.register(remove_pid)
-
-def initialize_ai_backend():
-    """Initialize the appropriate AI backend based on configuration"""
-    global ai_client, ai_backend_name, AI_BACKEND
-    
-    print(f"🤖 Initializing AI backend: {AI_BACKEND}")
-    
-    if AI_BACKEND == "atoma":
-        try:
-            initialize_atoma_client()
-            ai_client = get_atoma_client()
-            ai_backend_name = "Atoma DePIN Network"
-            print("✅ Atoma DePIN network initialized")
-        except Exception as e:
-            print(f"❌ Failed to initialize Atoma: {e}")
-            print("🔄 Falling back to Ollama...")
-            AI_BACKEND = "ollama"
-    
-    if AI_BACKEND == "ollama":
-        try:
-            initialize_ollama_client()
-            ai_client = get_ollama_client()
-            ai_backend_name = "Local Ollama"
-            print("✅ Ollama initialized")
-        except Exception as e:
-            print(f"❌ Failed to initialize Ollama: {e}")
-            raise Exception("No AI backend available")
-
-# Initialize AI backend
+# Initialize Ollama client
 try:
-    initialize_ai_backend()
+    initialize_ollama_client()
+    print("✅ Ollama client initialized successfully")
 except Exception as e:
-    print(f"❌ AI backend initialization failed: {e}")
-    print("Please check your configuration and ensure either Ollama or Atoma is available")
+    print(f"❌ Failed to initialize Ollama client: {e}")
+    print("Make sure Ollama is running: ollama serve")
     exit(1)
 
 def load_context():
@@ -170,33 +107,33 @@ def log_usage(usage):
     data = load_data()
     data["usage"].append({
         "timestamp": datetime.now().isoformat(),
-        "backend": ai_backend_name,
         "prompt_tokens": usage.prompt_tokens,
         "completion_tokens": usage.completion_tokens,
         "total_tokens": usage.total_tokens
     })
     save_data(data)
 
-# === UNIFIED AI CHAT ===
-def ai_chat(messages, temperature=0.6):
-    """Chat with the configured AI backend"""
+# === OLLAMA CHAT ===
+def ollama_chat(messages, temperature=0.6):
+    """Chat with Ollama model"""
     if GPT_CONTEXT:
         messages = [{"role": "system", "content": GPT_CONTEXT}] + messages
     
     try:
-        response = ai_client.chat_completions_create(
+        client = get_ollama_client()
+        response = client.chat_completions_create(
             messages=messages,
             temperature=temperature
         )
         log_usage(response.usage)
         return response.choices[0].message["content"]
     except Exception as e:
-        print(f"Error in AI chat ({ai_backend_name}): {e}")
-        return f"Sorry, I encountered an error with {ai_backend_name}: {str(e)}"
+        print(f"Error in Ollama chat: {e}")
+        return f"Sorry, I encountered an error: {str(e)}"
 
 def summarize_messages(messages):
     text_block = "\n".join(messages)
-    return ai_chat(
+    return ollama_chat(
         [
             {"role": "system", "content": "Summarize these chat messages and suggest follow-ups."},
             {"role": "user", "content": text_block}
@@ -204,7 +141,7 @@ def summarize_messages(messages):
     )
 
 def generate_text(prompt):
-    return ai_chat(
+    return ollama_chat(
         [
             {"role": "system", "content": "You are a helpful assistant that writes professional messages."},
             {"role": "user", "content": prompt}
@@ -215,7 +152,7 @@ def generate_text(prompt):
 def generate_brief(notes, summaries):
     note_text = "\n".join([f"- {n['text']}" for n in notes]) or "No notes."
     chat_summary = "\n".join(summaries) or "No recent chat summaries."
-    return ai_chat(
+    return ollama_chat(
         [
             {"role": "system", "content": "You generate clear, insightful daily briefings."},
             {"role": "user", "content": f"NOTES:\n{note_text}\n\nCHATS:\n{chat_summary}"},
@@ -251,7 +188,7 @@ async def collect_contact_data():
                     continue
                 summary = await asyncio.to_thread(summarize_messages, texts)
                 follow = await asyncio.to_thread(
-                    ai_chat,
+                    ollama_chat,
                     [
                         {
                             "role": "system",
@@ -310,15 +247,13 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         [InlineKeyboardButton("📅 Brief", callback_data="brief")],
         [InlineKeyboardButton("🔗 Meeting", callback_data="meeting")],
         [InlineKeyboardButton("📋 Read All", callback_data="readall")],
-        [InlineKeyboardButton("📈 Leads", callback_data="leads")],
-        [InlineKeyboardButton("🤖 AI Status", callback_data="ai_status")]
+        [InlineKeyboardButton("📈 Leads", callback_data="leads")]
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
     
     await update.message.reply_text(
-        f"🤖 **Telegram Manager Bot**\n\n"
-        f"**AI Backend:** {ai_backend_name}\n"
-        f"Choose an action:",
+        "🤖 **Telegram Manager Bot**\n\n"
+        "Choose an action:",
         reply_markup=reply_markup,
         parse_mode='Markdown'
     )
@@ -381,14 +316,6 @@ async def menu_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "Use: `/leads` to sync chat summaries to Google Sheets",
             parse_mode='Markdown'
         )
-    elif query.data == "ai_status":
-        await query.edit_message_text(
-            f"🤖 **AI Backend Status**\n\n"
-            f"**Backend:** {ai_backend_name}\n"
-            f"**Status:** ✅ Active\n"
-            f"**Model:** {ai_client.model if hasattr(ai_client, 'model') else 'Unknown'}",
-            parse_mode='Markdown'
-        )
 
 async def note(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle /note command"""
@@ -447,7 +374,7 @@ async def generate(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("❌ Please provide a prompt: `/generate <prompt>`", parse_mode='Markdown')
         return
     
-    await update.message.reply_text(f"🤖 Generating with {ai_backend_name}...")
+    await update.message.reply_text("🤖 Generating...")
     try:
         result = generate_text(prompt)
         await update.message.reply_text(f"🤖 **Generated Text:**\n\n{result}", parse_mode='Markdown')
@@ -470,101 +397,64 @@ async def meeting(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
 
 async def read_all(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Handle /readall command - Bot version with message reader info"""
+    """Handle /readall command"""
     if update.effective_user.id != USER_ID:
         return
     
-    await update.message.reply_text(
-        "📋 **Full Message Reading Available!**\n\n"
-        "🎯 **New Feature:** I've created a comprehensive message reader that can access all your Telegram messages.\n\n"
-        "🚀 **To use the full message reader:**\n"
-        "1. Add your phone number to .env file: `python setup_phone.py`\n"
-        "2. Test the setup: `python test_message_reader.py`\n"
-        "3. Run the reader: `python telegram_message_reader.py --interactive`\n\n"
-        "📖 **Message Reader Features:**\n"
-        "• Read all messages from all chats\n"
-        "• Filter by date range, keywords, or chat type\n"
-        "• Export to JSON, CSV, or TXT formats\n"
-        "• AI-powered summarization\n"
-        "• Interactive search and browsing\n"
-        "• Privacy-focused local processing\n\n"
-        "💡 **Quick Examples:**\n"
-        "• `python telegram_message_reader.py --recent-days 7` - Last week's messages\n"
-        "• `python telegram_message_reader.py --chats-only` - Only user chats\n"
-        "• `python telegram_message_reader.py --keywords urgent important` - Filter by keywords\n"
-        "• `python telegram_message_reader.py --export-format json` - Export to JSON\n\n"
-        "🔧 **Current Bot Limitations:**\n"
-        "• Bot tokens can only access messages sent to the bot\n"
-        "• Use `/note <text>` to save important messages manually\n"
-        "• Use `/summary` to view your saved notes\n"
-        "• Use `/generate <prompt>` for AI text generation",
-        parse_mode='Markdown'
-    )
+    await update.message.reply_text("📋 Reading recent messages...")
+    
+    try:
+        async with TelegramClient("session", TELEGRAM_API_ID, TELEGRAM_API_HASH) as client:
+            messages = []
+            async for dialog in client.iter_dialogs(limit=5):
+                try:
+                    msgs = await client.get_messages(dialog.id, limit=10)
+                    for msg in msgs:
+                        if msg.message:
+                            messages.append(f"[{dialog.name}] {msg.message}")
+                except Exception as e:
+                    print(f"Error reading messages from {dialog.name}: {e}")
+            
+            if messages:
+                summary = summarize_messages(messages[:50])  # Limit to avoid token limits
+                await update.message.reply_text(f"📋 **Message Summary:**\n\n{summary}", parse_mode='Markdown')
+            else:
+                await update.message.reply_text("📋 No recent messages found.")
+    except Exception as e:
+        await update.message.reply_text(f"❌ Error reading messages: {e}")
 
 async def brief(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Handle /brief command - Bot version (notes only)"""
+    """Handle /brief command"""
     if update.effective_user.id != USER_ID:
         return
     
-    await update.message.reply_text(f"📅 Generating briefing from your notes with {ai_backend_name}...")
+    await update.message.reply_text("📅 Generating daily briefing...")
     
     try:
         # Get today's notes
         notes = get_today_notes()
         
-        if not notes:
-            await update.message.reply_text(
-                "📝 **No notes found for today.**\n\n"
-                "💡 **To create a briefing:**\n"
-                "• Use `/note <text>` to save important items\n"
-                "• Use `/brief` again to generate the briefing\n\n"
-                "📋 **Example:**\n"
-                "`/note Meeting with client tomorrow at 2pm`\n"
-                "`/note Need to prepare budget proposal`\n"
-                "`/note Follow up on pending invoices`",
-                parse_mode='Markdown'
-            )
-            return
+        # Get recent chat summaries
+        async def fetch_summary():
+            async with TelegramClient("session", TELEGRAM_API_ID, TELEGRAM_API_HASH) as client:
+                summaries = []
+                async for dialog in client.iter_dialogs(limit=3):
+                    try:
+                        msgs = await client.get_messages(dialog.id, limit=20)
+                        texts = [m.message for m in msgs if m.message]
+                        if texts:
+                            summary = summarize_messages(texts)
+                            summaries.append(f"**{dialog.name}:** {summary}")
+                    except Exception as e:
+                        print(f"Error summarizing {dialog.name}: {e}")
+                return summaries
         
-        # Generate briefing from notes only
-        brief = generate_brief(notes, [])
+        summaries = await fetch_summary()
+        brief = generate_brief(notes, summaries)
         
-        await update.message.reply_text(
-            f"📅 **Daily Briefing (Notes Only):**\n\n{brief}\n\n"
-            "💡 **Note:** This briefing is based on your saved notes only.\n"
-            "For full chat analysis, use the interactive demo: `python test_ai_demo.py`",
-            parse_mode='Markdown'
-        )
+        await update.message.reply_text(f"📅 **Daily Briefing:**\n\n{brief}", parse_mode='Markdown')
     except Exception as e:
         await update.message.reply_text(f"❌ Error generating briefing: {e}")
-
-async def ai_status(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Handle /ai_status command"""
-    if update.effective_user.id != USER_ID:
-        return
-    
-    try:
-        # Test AI backend
-        test_response = ai_chat([{"role": "user", "content": "Say hello in one word."}])
-        
-        status_text = f"🤖 **AI Backend Status**\n\n"
-        status_text += f"**Backend:** {ai_backend_name}\n"
-        status_text += f"**Status:** ✅ Active\n"
-        status_text += f"**Model:** {ai_client.model if hasattr(ai_client, 'model') else 'Unknown'}\n"
-        status_text += f"**Test Response:** {test_response}\n"
-        
-        if AI_BACKEND == "atoma":
-            try:
-                network_status = ai_client.get_network_status()
-                if "error" not in network_status:
-                    status_text += f"**Network Status:** {network_status.get('status', 'Unknown')}\n"
-                    status_text += f"**Available Compute:** {network_status.get('available_compute', 'Unknown')}\n"
-            except:
-                pass
-        
-        await update.message.reply_text(status_text, parse_mode='Markdown')
-    except Exception as e:
-        await update.message.reply_text(f"❌ AI Status Error: {e}")
 
 async def keyword_filter(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Filter messages for keywords"""
@@ -578,8 +468,7 @@ async def keyword_filter(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # === MAIN FUNCTION ===
 def main():
     """Main function to run the bot"""
-    check_single_instance()
-    print(f"🤖 Starting Telegram Manager Bot with {ai_backend_name}...")
+    print("🤖 Starting Telegram Manager Bot with Ollama...")
     
     # Create application
     application = ApplicationBuilder().token(TELEGRAM_BOT_TOKEN).build()
@@ -594,12 +483,10 @@ def main():
     application.add_handler(CommandHandler("readall", read_all))
     application.add_handler(CommandHandler("brief", brief))
     application.add_handler(CommandHandler("leads", sync_sheet))
-    application.add_handler(CommandHandler("ai_status", ai_status))
     application.add_handler(CallbackQueryHandler(menu_callback))
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, keyword_filter))
     
     print("🤖 Bot is running...")
-    print(f"🤖 Using AI backend: {ai_backend_name}")
     print("Press Ctrl+C to stop")
     
     # Start the bot

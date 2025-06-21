@@ -1,326 +1,478 @@
-# Telegram Manager Bot with Unified AI Backend
+# Telegram Manager Bot - Unified Documentation
 
-A powerful AI-powered Telegram bot that helps you manage your messages, take notes, and get intelligent summaries of your conversations. **Now with support for both local Ollama models and Atoma DePIN network!**
+## 🚀 Overview
 
-## 🚀 Key Features
+A comprehensive Telegram bot system with AI backends, team management, Google Sheets integration, and multiple deployment options including Nosana, Akash, and local deployment.
 
-- **🤖 Dual AI Backends**: Choose between local Ollama or Atoma DePIN network
-- **🔒 Privacy Options**: Local processing with Ollama or distributed compute with Atoma
-- **💰 Flexible Cost**: Free local processing or pay-per-use distributed compute
-- **⚡ High Performance**: Fast local inference or scalable cloud processing
-- **🛠️ Easy Setup**: Simple configuration to switch between backends
+## 📋 Features
 
-## AI Backend Comparison
+### 🤖 Core Bot Features
+- **Message Processing**: Read and analyze all Telegram messages
+- **AI Integration**: Multiple AI backends (Ollama, Atoma, ChatGPT)
+- **Business Intelligence**: Generate business briefs, summaries, and insights
+- **Team Management**: Role-based access control with whitelist
+- **Google Sheets**: Automated data export and lead tracking
+- **Security**: API key authentication, rate limiting, logging
 
-| Feature | Ollama (Local) | Atoma (DePIN) |
-|---------|----------------|---------------|
-| **Privacy** | ✅ Full privacy (local) | ❌ Data sent to network |
-| **Cost** | ✅ Free | 💰 Pay per use |
-| **Setup** | ❌ Requires installation | ✅ No local setup |
-| **Resources** | ❌ Uses your computer | ✅ Distributed compute |
-| **Speed** | ✅ Fast local inference | ⚡ Network dependent |
-| **Models** | ❌ Limited to local models | ✅ Access to many models |
-| **Offline** | ✅ Works offline | ❌ Requires internet |
+### 🏗️ Deployment Options
+- **Nosana**: GPU-powered decentralized compute
+- **Akash**: Alternative decentralized hosting
+- **Local**: Development and testing
+- **Docker**: Containerized deployment
+- **Jupyter**: Notebook-based deployment
 
-## Prerequisites
+## 🛠️ Quick Start
 
-### For Ollama (Local AI)
-- Python 3.8 or higher
-- Ollama installed and running
-- At least 8GB RAM (16GB recommended)
-
-### For Atoma (DePIN Network)
-- Python 3.8 or higher
-- Atoma API key
-- Internet connection
-
-### For Both
-- Telegram Bot Token (from [@BotFather](https://t.me/botfather))
-- Telegram API credentials (from [my.telegram.org](https://my.telegram.org))
-
-## Installation
-
-### 1. Clone and Setup
+### 1. Environment Setup
 
 ```bash
 # Clone the repository
-git clone https://github.com/arigatoexpress/telegram_manager_bot.git
-cd telegram_manager_bot
+git clone <your-repo>
+cd tg_manager_v2
 
-# Run the unified setup
-python setup_unified.py
+# Create virtual environment
+python -m venv .venv
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+
+# Install dependencies
+pip install -r requirements.txt
 ```
 
-### 2. Choose Your AI Backend
+### 2. Configuration
 
-#### Option A: Ollama (Local AI)
-
-**Install Ollama:**
+Copy the example environment file:
 ```bash
-# macOS/Linux
+cp env.example .env
+```
+
+Edit `.env` with your credentials:
+```env
+# Telegram Configuration
+TELEGRAM_BOT_TOKEN=your_bot_token
+TELEGRAM_API_ID=your_api_id
+TELEGRAM_API_HASH=your_api_hash
+TELEGRAM_PHONE=your_phone_number
+USER_ID=your_user_id
+
+# AI Backends
+OLLAMA_BASE_URL=http://localhost:11434
+ATOMA_API_KEY=your_atoma_key
+OPENAI_API_KEY=your_openai_key
+
+# Google Sheets (Optional)
+GOOGLE_SERVICE_ACCOUNT_FILE=service_account.json
+GOOGLE_SPREADSHEET_ID=your_spreadsheet_id
+
+# Nosana (Optional)
+NOSANA_API_KEY=your_nosana_key
+
+# Security
+SECRET_KEY=your_secret_key
+```
+
+### 3. Run the Bot
+
+```bash
+# Basic bot
+python telegram_manager_bot.py
+
+# Unified bot with all features
+python telegram_manager_bot_unified.py
+
+# Team access management
+python team_access_manager.py
+```
+
+## 🚀 Deployment Options
+
+### Option 1: Nosana GPU Deployment (Recommended)
+
+**Best for:** Production teams, AI workloads, 24/7 operation
+
+#### Quick Deploy:
+```bash
+# Create deployment package
+python deploy_to_nosana.py
+
+# Follow the web interface instructions
+# Go to https://nosana.com → Deploy Now
+```
+
+#### Manual Deploy:
+1. **Get API Key**: Visit [nosana.com](https://nosana.com) → Dashboard → API Keys
+2. **Create Package**: Run `python deploy_to_nosana.py`
+3. **Upload Files**: Use web interface or CLI
+4. **Select GPU**: RTX 3090 (24GB) recommended
+5. **Set Environment**: Add all required variables
+6. **Deploy**: Start your bot
+
+**Costs:**
+- RTX 3090: $350-400/month
+- RTX 4090: $500-600/month
+- RTX 3080 Ti: $250-300/month
+
+### Option 2: Akash Deployment
+
+**Best for:** Alternative decentralized hosting
+
+```bash
+# Deploy to Akash
+python deploy_to_akash.py
+
+# Follow Akash CLI instructions
+akash tx deployment create deployment.yml
+```
+
+### Option 3: Local Development
+
+**Best for:** Testing, development, small teams
+
+```bash
+# Install Ollama locally
 curl -fsSL https://ollama.ai/install.sh | sh
 
-# Windows
-# Download from https://ollama.ai/download
+# Pull AI model
+ollama pull llama3.2:3b
+
+# Run bot
+python telegram_manager_bot_ollama.py
 ```
 
-**Start Ollama and Install Model:**
-```bash
-# Start Ollama server
-ollama serve
+### Option 4: Docker Deployment
 
-# In another terminal, install a model
-ollama pull llama3.2:latest
-```
-
-**Configure Environment:**
-```bash
-# Edit .env file
-AI_BACKEND=ollama
-OLLAMA_MODEL=llama3.2:latest
-```
-
-#### Option B: Atoma (DePIN Network)
-
-**Get Atoma API Key:**
-1. Visit [https://atoma.ai](https://atoma.ai)
-2. Sign up for an account
-3. Get your API key from the dashboard
-
-**Configure Environment:**
-```bash
-# Edit .env file
-AI_BACKEND=atoma
-ATOMA_API_KEY=your_api_key_here
-ATOMA_MODEL=llama3.2
-```
-
-### 3. Configure Telegram
-
-Edit the `.env` file with your Telegram credentials:
+**Best for:** Consistent environments, easy scaling
 
 ```bash
-# Telegram Bot Configuration
-TELEGRAM_BOT_TOKEN=your_bot_token_here
-TELEGRAM_API_ID=your_api_id_here
-TELEGRAM_API_HASH=your_api_hash_here
-USER_ID=your_telegram_user_id_here
+# Build and run with Docker
+docker build -t telegram-bot .
+docker run -d --name telegram-bot telegram-bot
+
+# Or use docker-compose
+docker-compose up -d
 ```
 
-### 4. Test Setup
+### Option 5: Jupyter Notebook Deployment
+
+**Best for:** Interactive development, testing
 
 ```bash
-# Test everything is working
-python test_unified_setup.py
+# Start Jupyter
+jupyter notebook
+
+# Open nosana_jupyter_setup.ipynb
+# Follow the notebook instructions
 ```
 
-### 5. Run the Bot
+## 🔧 Configuration Details
 
-```bash
-# Start the unified bot
-python telegram_manager_bot_unified.py
-```
+### AI Backend Configuration
 
-## Configuration Options
-
-### Environment Variables
-
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `AI_BACKEND` | `ollama` | Choose: `ollama` or `atoma` |
-| `OLLAMA_BASE_URL` | `http://localhost:11434` | Ollama server URL |
-| `OLLAMA_MODEL` | `llama3.2:latest` | Ollama model to use |
-| `ATOMA_API_KEY` | - | Your Atoma API key |
-| `ATOMA_BASE_URL` | `https://api.atoma.ai` | Atoma API URL |
-| `ATOMA_MODEL` | `llama3.2` | Atoma model to use |
-| `TELEGRAM_BOT_TOKEN` | - | Your Telegram bot token |
-| `TELEGRAM_API_ID` | - | Your Telegram API ID |
-| `TELEGRAM_API_HASH` | - | Your Telegram API hash |
-| `USER_ID` | - | Your Telegram user ID |
-
-### Switching Between Backends
-
-You can easily switch between AI backends by changing the `AI_BACKEND` variable:
-
-```bash
-# For local Ollama
-AI_BACKEND=ollama
-
-# For Atoma DePIN network
-AI_BACKEND=atoma
-```
-
-## Available Commands
-
-Once the bot is running, you can use these commands in Telegram:
-
-- `/start` - Show the main menu
-- `/note <text>` - Save a quick note
-- `/summary` - View recent notes
-- `/followup` - See today's tasks
-- `/generate <prompt>` - Generate AI text
-- `/brief` - Get daily briefing
-- `/meeting [topic]` - Create meeting link
-- `/readall` - Dump recent messages
-- `/leads` - Sync to Google Sheets
-- `/ai_status` - Check AI backend status
-
-## Model Recommendations
-
-### For Ollama (Local)
-- **llama3.2:latest** - Best overall performance
-- **mistral:latest** - Fast and efficient
-- **phi3:latest** - Very fast, good for simple tasks
-- **codellama:latest** - Excellent for code-related tasks
-
-### For Atoma (DePIN)
-- **llama3.2** - High-quality responses
-- **gpt-4** - Best quality (if available)
-- **claude-3** - Excellent reasoning
-- **mistral** - Fast and cost-effective
-
-## Advanced Usage
-
-### Custom Context
-
-Create a `context.md` file to provide custom instructions to the AI:
-
-```markdown
-You are a helpful assistant for a business professional. 
-Always be concise and professional in your responses.
-Focus on actionable insights and clear recommendations.
-```
-
-### Fallback Configuration
-
-You can configure the bot to automatically fallback between backends:
-
+#### Ollama (Local)
 ```python
-# In telegram_manager_bot_unified.py
-def initialize_ai_backend():
-    global ai_client, ai_backend_name
-    
-    # Try Atoma first
-    try:
-        initialize_atoma_client()
-        ai_client = get_atoma_client()
-        ai_backend_name = "Atoma DePIN Network"
-        return
-    except Exception as e:
-        print(f"Atoma failed: {e}")
-    
-    # Fallback to Ollama
-    try:
-        initialize_ollama_client()
-        ai_client = get_ollama_client()
-        ai_backend_name = "Local Ollama (Fallback)"
-        return
-    except Exception as e:
-        print(f"Ollama failed: {e}")
-    
-    raise Exception("No AI backend available")
+# In your .env
+OLLAMA_BASE_URL=http://localhost:11434
+OLLAMA_MODEL=llama3.2:3b
+
+# Usage
+from ollama_client import OllamaClient
+client = OllamaClient()
+response = client.generate("Hello, world!")
 ```
 
-### Usage Monitoring
+#### Atoma (DePIN)
+```python
+# In your .env
+ATOMA_API_KEY=your_atoma_key
 
-The bot automatically logs usage statistics for both backends:
-
-```json
-{
-  "usage": [
-    {
-      "timestamp": "2024-01-01T12:00:00",
-      "backend": "Atoma DePIN Network",
-      "prompt_tokens": 100,
-      "completion_tokens": 50,
-      "total_tokens": 150
-    }
-  ]
-}
+# Usage
+from atoma_client import AtomaClient
+client = AtomaClient()
+response = client.generate("Hello, world!")
 ```
 
-## Troubleshooting
+#### OpenAI (Cloud)
+```python
+# In your .env
+OPENAI_API_KEY=your_openai_key
 
-### Ollama Issues
+# Usage
+import openai
+response = openai.ChatCompletion.create(
+    model="gpt-3.5-turbo",
+    messages=[{"role": "user", "content": "Hello, world!"}]
+)
+```
 
+### Google Sheets Integration
+
+1. **Create Service Account**:
+   - Go to [Google Cloud Console](https://console.cloud.google.com/)
+   - Create project → Enable Google Sheets API
+   - Create service account → Download JSON key
+
+2. **Configure Spreadsheet**:
+   - Create Google Sheet
+   - Share with service account email
+   - Copy spreadsheet ID
+
+3. **Set Environment**:
+```env
+GOOGLE_SERVICE_ACCOUNT_FILE=service_account.json
+GOOGLE_SPREADSHEET_ID=your_spreadsheet_id
+```
+
+### Team Management
+
+#### Add Team Members
 ```bash
-# Check if Ollama is running
+python team_access_manager.py
+# Follow interactive prompts
+```
+
+#### API Access
+```python
+# Team members can access via API
+import requests
+
+headers = {
+    'Authorization': 'Bearer wl_user_987654321fedcba',
+    'Content-Type': 'application/json'
+}
+
+response = requests.get('http://your-bot-url/api/status', headers=headers)
+```
+
+## 📊 Monitoring and Management
+
+### Health Checks
+```bash
+# Check bot status
+python test_bot_status.py
+
+# Run comprehensive tests
+python test_suite.py
+
+# Monitor logs
+tail -f bot.log
+```
+
+### Performance Monitoring
+- **GPU Utilization**: Target 70-80%
+- **Memory Usage**: Keep under 90%
+- **Response Time**: Target <3 seconds
+- **Cost per Request**: Optimize efficiency
+
+### Scaling
+- **User count > 10**: Consider RTX 4090
+- **Response time > 5s**: Upgrade GPU or add instances
+- **Memory usage > 80%**: Increase VRAM
+- **Concurrent requests > 15**: Add load balancing
+
+## 🔒 Security Features
+
+### Authentication
+- API key-based authentication
+- Role-based access control
+- Rate limiting
+- Session management
+
+### Data Protection
+- Encrypted storage
+- Secure API communication
+- Audit logging
+- Backup and recovery
+
+### Best Practices
+- Use strong API keys
+- Rotate credentials regularly
+- Monitor access logs
+- Keep dependencies updated
+
+## 🧪 Testing
+
+### Run All Tests
+```bash
+python test_suite.py
+```
+
+### Individual Tests
+```bash
+# Test AI backends
+python test_ai_backends.py
+
+# Test message reader
+python test_message_reader.py
+
+# Test bot functionality
+python test_bot_ai_only.py
+```
+
+### Test Report
+Tests generate a comprehensive report in `test_report.txt` with:
+- Environment validation
+- Dependency checks
+- Security audits
+- Performance metrics
+- Compatibility verification
+
+## 📈 Cost Optimization
+
+### Nosana Optimization
+- **Spot Instances**: 30-50% savings
+- **Reserved Instances**: 20-30% savings
+- **Auto-scaling**: 40-60% savings
+- **Multi-region**: Deploy in cheaper regions
+
+### General Optimization
+- Use model quantization (INT8/FP16)
+- Implement request batching
+- Cache frequently used responses
+- Optimize model loading times
+
+## 🆘 Troubleshooting
+
+### Common Issues
+
+#### Bot Not Starting
+```bash
+# Check environment variables
+python test_suite.py
+
+# Check logs
+tail -f bot.log
+
+# Verify dependencies
+pip install -r requirements.txt
+```
+
+#### AI Backend Issues
+```bash
+# Test Ollama
 curl http://localhost:11434/api/tags
 
-# Start Ollama if not running
-ollama serve
+# Test Atoma
+python test_ai_backends.py
 
-# Check available models
-ollama list
-
-# Install a model
-ollama pull llama3.2:latest
-```
-
-### Atoma Issues
-
-```bash
-# Test Atoma API connection
-curl -H "Authorization: Bearer YOUR_API_KEY" \
-     https://api.atoma.ai/v1/models
-
-# Check your API key
+# Check API keys
 echo $ATOMA_API_KEY
-
-# Verify network status
-curl -H "Authorization: Bearer YOUR_API_KEY" \
-     https://api.atoma.ai/v1/network/status
 ```
 
-### General Issues
+#### Deployment Issues
+```bash
+# Check deployment package
+ls -la nosana_deployment/
 
-1. **Bot not responding**: Check Telegram credentials
-2. **AI not working**: Verify AI backend configuration
-3. **Slow responses**: Consider switching to a faster model
-4. **Memory issues**: Use smaller models or increase system RAM
+# Verify configuration
+cat nosana_deployment/nosana_config.json
 
-## Cost Optimization
+# Test Docker build
+docker build -t test-bot .
+```
 
-### For Ollama (Local)
-- **Free**: No ongoing costs
-- **Hardware**: Consider GPU acceleration for better performance
-- **Storage**: Models can take 1-10GB each
+### Getting Help
+- **Documentation**: Check this README and code comments
+- **Issues**: Create GitHub issue with logs
+- **Community**: Join our Discord/Telegram
+- **Support**: Contact for enterprise support
 
-### For Atoma (DePIN)
-- **Pay per use**: Only pay for what you use
-- **Model selection**: Smaller models are cheaper
-- **Batch processing**: Group requests to reduce costs
-- **Caching**: Implement response caching to avoid repeated requests
+## 🔄 Updates and Maintenance
 
-## Security Considerations
+### Auto Updates
+```bash
+# Run update script
+./auto_update.sh
 
-### Ollama (Local)
-- ✅ All data stays on your machine
-- ✅ No internet required for AI processing
-- ✅ Full control over models and data
-- ❌ Requires local resources
+# Or manually
+git pull
+pip install -r requirements.txt
+```
 
-### Atoma (DePIN)
-- ❌ Data sent to network (encrypted)
-- ❌ Requires internet connection
-- ✅ No local resource usage
-- ✅ Professional-grade security
+### Backup
+```bash
+# Backup configuration
+cp .env .env.backup
+cp team_members.json team_members.backup.json
 
-## Contributing
+# Backup logs
+tar -czf logs_backup_$(date +%Y%m%d).tar.gz *.log
+```
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+### Migration
+```bash
+# Export current setup
+python export_config.py
 
-## Support
+# Import to new environment
+python import_config.py
+```
 
-If you encounter any issues:
+## 📚 Additional Resources
 
-1. Check the troubleshooting section above
-2. Verify your AI backend configuration
-3. Ensure your Telegram credentials are correct
-4. Check the bot logs for error messages
+### Documentation
+- [Nosana GPU Guide](nosana_gpu_guide.md)
+- [Security Guide](SECURITY_GUIDE.md)
+- [API Documentation](API_DOCS.md)
 
-For additional help, please open an issue on GitHub.
+### Examples
+- [Basic Bot](examples/basic_bot.py)
+- [Advanced Features](examples/advanced_features.py)
+- [Custom Integrations](examples/custom_integrations.py)
 
-## License
+### Community
+- [Discord](https://discord.gg/your-community)
+- [Telegram](https://t.me/your-channel)
+- [GitHub Issues](https://github.com/your-repo/issues)
 
-This project is licensed under the MIT License - see the LICENSE file for details. 
+## 🎯 Quick Reference
+
+### Essential Commands
+```bash
+# Start bot
+python telegram_manager_bot_unified.py
+
+# Manage team
+python team_access_manager.py
+
+# Deploy to Nosana
+python deploy_to_nosana.py
+
+# Run tests
+python test_suite.py
+
+# Check status
+python test_bot_status.py
+```
+
+### Environment Variables
+```env
+# Required
+TELEGRAM_BOT_TOKEN=
+TELEGRAM_API_ID=
+TELEGRAM_API_HASH=
+TELEGRAM_PHONE=
+USER_ID=
+
+# Optional
+OLLAMA_BASE_URL=http://localhost:11434
+ATOMA_API_KEY=
+NOSANA_API_KEY=
+GOOGLE_SERVICE_ACCOUNT_FILE=
+GOOGLE_SPREADSHEET_ID=
+```
+
+### File Structure
+```
+tg_manager_v2/
+├── telegram_manager_bot_unified.py    # Main bot
+├── team_access_manager.py             # Team management
+├── deploy_to_nosana.py                # Nosana deployment
+├── test_suite.py                      # Testing
+├── requirements.txt                   # Dependencies
+├── .env                              # Configuration
+├── team_members.json                 # Team data
+└── nosana_deployment/                # Deployment package
+```
+
+---
+
+**Ready to deploy?** Choose your preferred option above and follow the step-by-step instructions! 

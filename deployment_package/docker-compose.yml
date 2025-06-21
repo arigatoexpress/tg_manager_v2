@@ -1,0 +1,15 @@
+version: '3.8'
+
+services:
+  telegram-manager-bot:
+    build: .
+    container_name: telegram-manager-bot
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - PYTHONPATH=/app
+    volumes:
+      - ./logs:/app/logs
+    env_file:
+      - .env
