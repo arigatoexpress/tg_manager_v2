@@ -9,6 +9,7 @@ from datetime import datetime
 import schedule
 from openai import OpenAI
 from telethon import TelegramClient
+import requests
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import (
     ApplicationBuilder, CommandHandler, CallbackQueryHandler,
@@ -23,6 +24,9 @@ TELEGRAM_API_ID = int(os.getenv("TELEGRAM_API_ID"))
 TELEGRAM_API_HASH = os.getenv("TELEGRAM_API_HASH")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 USER_ID = int(os.getenv("USER_ID"))
+SUI_NODE_URL = os.getenv("SUI_NODE_URL")
+SUI_PACKAGE = os.getenv("SUI_PACKAGE")
+SUI_MODULE = os.getenv("SUI_MODULE")
 
 DATA_FILE = "data_store.json"
 KEYWORDS = [
@@ -32,6 +36,7 @@ KEYWORDS = [
 ]
 
 openai_client = OpenAI(api_key=OPENAI_API_KEY)
+sui_cursor = None
 
 # === DATA FUNCTIONS ===
 def load_data():
@@ -164,6 +169,36 @@ async def generate(update: Update, context: ContextTypes.DEFAULT_TYPE):
     except Exception as e:
         await context.bot.send_message(USER_ID, f"❌ Error: {e}")
 
+async def read_all(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Send recent messages from all chats."""
+    try:
+        async with TelegramClient("session", TELEGRAM_API_ID, TELEGRAM_API_HASH) as client:
+            dialogs = []
+            async for dialog in client.iter_dialogs():
+                dialogs.append(dialog)
+
+            lines = []
+            for dialog in dialogs:
+                msgs = await client.get_messages(dialog.id, limit=50)
+                for msg in reversed(msgs):
+                    if msg.message:
+                        sender = msg.sender_id
+                        lines.append(f"[{dialog.name}] {sender}: {msg.message}")
+
+            if not lines:
+                return await context.bot.send_message(USER_ID, "No messages found.")
+
+            text = "\n".join(lines)
+            if len(text) > 4000:
+                with open("all_messages.txt", "w") as f:
+                    f.write(text)
+                await context.bot.send_document(USER_ID, document="all_messages.txt")
+                os.remove("all_messages.txt")
+            else:
+                await context.bot.send_message(USER_ID, text)
+    except Exception as e:
+        await context.bot.send_message(USER_ID, f"❌ Error fetching messages: {e}")
+
 async def brief(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         async def fetch_summary():
@@ -194,6 +229,34 @@ async def keyword_filter(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if any(k in text for k in KEYWORDS):
         await context.bot.send_message(USER_ID, f"🔔 Keyword detected:\n{text}")
 
+async def check_sui_events(app):
+    """Poll Sui RPC for events from the configured contract."""
+    global sui_cursor
+    if not SUI_NODE_URL or not SUI_PACKAGE or not SUI_MODULE:
+        return
+    try:
+        payload = {
+            "jsonrpc": "2.0",
+            "id": 1,
+            "method": "suix_queryEvents",
+            "params": [
+                {"MoveEventModule": {"package": SUI_PACKAGE, "module": SUI_MODULE}},
+                sui_cursor,
+                10,
+                False,
+            ],
+        }
+        r = requests.post(SUI_NODE_URL, json=payload, timeout=10)
+        r.raise_for_status()
+        res = r.json().get("result", {})
+        events = res.get("data", [])
+        if events:
+            sui_cursor = res.get("nextCursor")
+            for ev in events:
+                await app.bot.send_message(USER_ID, f"📣 Sui event detected:\n{ev}")
+    except Exception as e:
+        print("Sui check failed", e)
+
 # === SCHEDULER LOOP ===
 def run_schedule(app):
     while True:
@@ -209,9 +272,12 @@ def main():
     app.add_handler(CommandHandler("summary", summary))
     app.add_handler(CommandHandler("followup", followup))
     app.add_handler(CommandHandler("generate", generate))
+    app.add_handler(CommandHandler("readall", read_all))
     app.add_handler(CommandHandler("brief", brief))
     app.add_handler(CallbackQueryHandler(menu_callback))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, keyword_filter))
+
+    schedule.every(60).seconds.do(lambda: asyncio.run(check_sui_events(app)))
 
     print("🤖 Bot is running...")
     threading.Thread(target=run_schedule, args=(app,), daemon=True).start()
