@@ -8,7 +8,7 @@ import asyncio
 from datetime import datetime
 import schedule
 from openai import OpenAI
-from telethon.sync import TelegramClient
+from telethon import TelegramClient
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import (
     ApplicationBuilder, CommandHandler, CallbackQueryHandler,
@@ -32,7 +32,6 @@ KEYWORDS = [
 ]
 
 openai_client = OpenAI(api_key=OPENAI_API_KEY)
-telethon_client = TelegramClient("session", TELEGRAM_API_ID, TELEGRAM_API_HASH)
 
 # === DATA FUNCTIONS ===
 def load_data():
@@ -167,19 +166,24 @@ async def generate(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def brief(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
-        def fetch_summary():
-            telethon_client.start()
-            chats = list(telethon_client.iter_dialogs())[:3]
-            results = []
-            for chat in chats:
-                msgs = telethon_client.get_messages(chat.id, limit=20)
-                texts = [m.message for m in msgs if m.message]
-                results.append(summarize_messages(texts))
-            telethon_client.disconnect()
-            return results
+        async def fetch_summary():
+            async with TelegramClient("session", TELEGRAM_API_ID, TELEGRAM_API_HASH) as client:
+                chats = []
+                async for dialog in client.iter_dialogs():
+                    chats.append(dialog)
+                    if len(chats) >= 3:
+                        break
+
+                results = []
+                for chat in chats:
+                    msgs = await client.get_messages(chat.id, limit=20)
+                    texts = [m.message for m in msgs if m.message]
+                    summary = await asyncio.to_thread(summarize_messages, texts)
+                    results.append(summary)
+                return results
 
         notes = get_today_notes()
-        summaries = await asyncio.to_thread(fetch_summary)
+        summaries = await fetch_summary()
         full_brief = await asyncio.to_thread(generate_brief, notes, summaries)
         await context.bot.send_message(USER_ID, f"📋 Your Daily Briefing:\n\n{full_brief}")
     except Exception as e:
