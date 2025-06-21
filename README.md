@@ -18,6 +18,7 @@ A powerful AI-powered Telegram bot that helps you manage your messages, take not
 - Keyword detection for important messages
 - Automatic alerts for urgent content
 - Follow-up tracking for tasks and action items
+- Sui smart contract interaction alerts
 
 📊 **Daily Briefings**
 - AI-generated summaries of your Telegram chats
@@ -63,6 +64,11 @@ OPENAI_API_KEY=your_openai_api_key_here
 
 # User Configuration
 USER_ID=your_telegram_user_id_here
+
+# Sui Monitoring
+SUI_NODE_URL=https://fullnode.mainnet.sui.io
+SUI_PACKAGE=your_contract_package
+SUI_MODULE=your_contract_module
 ```
 
 ### 4. Getting Your Credentials
@@ -106,6 +112,7 @@ python telegram_manager_bot.py
 - `/followup` - Show today's follow-up tasks
 - `/generate <prompt>` - Generate AI-powered text
 - `/brief` - Get a comprehensive daily briefing
+- `/readall` - Download recent messages from all chats
 
 ### Interactive Menu
 
