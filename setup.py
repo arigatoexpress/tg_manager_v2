@@ -32,7 +32,7 @@ def create_env_file():
     if os.path.exists(".env"):
         print("✅ .env file already exists")
         return True
-    
+
     if os.path.exists("env.example"):
         try:
             with open("env.example", "r") as src, open(".env", "w") as dst:
@@ -51,19 +51,19 @@ def main():
     """Main setup function"""
     print("🚀 Setting up Telegram Manager Bot...")
     print("=" * 50)
-    
+
     # Check Python version
     if not check_python_version():
         sys.exit(1)
-    
+
     # Install dependencies
     if not install_dependencies():
         sys.exit(1)
-    
+
     # Create .env file
     if not create_env_file():
         sys.exit(1)
-    
+
     print("=" * 50)
     print("✅ Setup completed successfully!")
     print("\n📋 Next steps:")
@@ -72,4 +72,4 @@ def main():
     print("\n📖 See README.md for detailed instructions")
 
 if __name__ == "__main__":
-    main() 
+    main()
