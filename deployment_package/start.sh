@@ -1,6 +1,6 @@
 #!/bin/bash
-# Nosana Startup Script
-echo "🚀 Starting Telegram Manager Bot on Nosana..."
+# Telegram Manager Bot Startup Script
+echo "🚀 Starting Telegram Manager Bot..."
 
 # Install dependencies
 pip install -r requirements.txt

@@ -1,47 +1,80 @@
-# Telegram Manager Bot
+# Telegram Manager Bot - Consolidated
 
-A powerful AI-powered Telegram bot that helps you manage your messages, take notes, and get intelligent summaries of your conversations.
+## 🚀 Quick Start
 
-## Features
-
-🤖 **AI-Powered Features**
-- Generate professional messages using OpenAI GPT-4
-- Intelligent summarization of chat conversations
-- Daily briefings combining notes and chat summaries
-
-📝 **Note Management**
-- Save quick notes with timestamps
-- View recent notes and today's notes
-- Search and filter notes by keywords
-
-🔔 **Smart Monitoring**
-- Keyword detection for important messages
-- Automatic alerts for urgent content
-- Follow-up tracking for tasks and action items
-- Sui smart contract interaction alerts
-- Easy meeting link generation
-- Custom context for AI prompts
-- Sync conversations to Google Sheets for deal tracking
-
-📊 **Daily Briefings**
-- AI-generated summaries of your Telegram chats
-- Combined insights from notes and conversations
-- Actionable follow-up suggestions
-
-## Setup Instructions
-
-### 1. Prerequisites
-
-- Python 3.8 or higher
-- Telegram Bot Token (from [@BotFather](https://t.me/botfather))
-- Telegram API credentials (from [my.telegram.org](https://my.telegram.org))
-- OpenAI API key (from [OpenAI Platform](https://platform.openai.com))
-
-### 2. Installation
 ```bash
-# Clone the repository
-git clone https://github.com/arigatoexpress/telegram_manager_bot.git
-cd telegram_manager_bot
+# 1. Setup environment
+cp env.example .env
+# Edit .env with your credentials
 
-# Install dependencies
+# 2. Install dependencies
 pip install -r requirements.txt
+
+# 3. Run the bot
+python telegram_manager_bot_unified.py
+
+# 4. Deploy to Nosana
+python deploy_to_nosana.py
+```
+
+## 📁 Project Structure
+
+```
+tg_manager_v2/
+├── telegram_manager_bot_unified.py    # Main bot
+├── ollama_client.py                   # Ollama AI client
+├── atoma_client.py                    # Atoma AI client
+├── nosana_client.py                   # Nosana SDK
+├── google_sheets_integration.py       # Google Sheets
+├── team_access_manager.py             # Team management
+├── deploy_to_nosana.py                # Nosana deployment
+├── test_suite.py                      # Testing
+├── requirements.txt                   # Dependencies
+├── env.example                        # Configuration template
+├── README_UNIFIED.md                  # Full documentation
+├── deployment/                        # Deployment scripts
+├── testing/                           # Test files
+├── docs/                              # Documentation
+├── config/                            # Configuration files
+├── scripts/                           # Utility scripts
+└── deployment_package/                # Clean deployment package
+```
+
+## 🎯 Key Features
+
+- 🤖 **AI Integration**: Ollama, Atoma, OpenAI
+- 📊 **Business Intelligence**: Automated analysis and insights
+- 👥 **Team Management**: Role-based access control
+- 📈 **Google Sheets**: Automated data export
+- 🚀 **Nosana Deployment**: GPU-powered hosting
+- 🔒 **Security**: API keys, rate limiting, logging
+- 🧪 **Testing**: Comprehensive test suite
+
+## 📚 Documentation
+
+- **Main Guide**: `README_UNIFIED.md`
+- **Nosana GPU Guide**: `nosana_gpu_guide.md`
+- **Security Guide**: `SECURITY_GUIDE.md`
+- **Deployment**: `deployment/` directory
+
+## 🛠️ Development
+
+```bash
+# Run tests
+python test_suite.py
+
+# Check bot status
+python test_bot_status.py
+
+# Manage team access
+python team_access_manager.py
+
+# Deploy to Nosana
+python deploy_to_nosana.py
+```
+
+## 📞 Support
+
+- Check `docs/` for detailed documentation
+- Run `python test_suite.py` for diagnostics
+- See `README_UNIFIED.md` for complete guide

@@ -18,5 +18,5 @@
   "ports": [
     8000
   ],
-  "startup_command": "./start_nosana.sh"
+  "startup_command": "./start.sh"
 }
